@@ -24,7 +24,7 @@ def generate_html_file(titles, output_file):
         file.write("<html>\n")
         file.write("<body>\n")
         for url, title in titles:
-            file.write(f"<a href='{url}'>{title}</a><br>\n")
+            file.write(f"<a href='{url}' target='_blank'>{title}</a><br>\n")
         file.write("</body>\n")
         file.write("</html>\n")
 
