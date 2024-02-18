@@ -9,7 +9,8 @@ from bs4 import BeautifulSoup
 headers_values = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36'}
 
 def get_titles(urls_file):
-    titles = []
+    titles_ok = [] # Páginas que retornam status HTTP 200 OK
+    titles_error = [] # Páginas que retornam status HTTP diferente de 200 OK, provavelmente com problemas
     print(f"Lendo URLs do arquivo: {urls_file}\n")
     with open(urls_file, 'r', encoding='UTF-8', errors='ignore') as file:
         urls = file.readlines()
@@ -21,25 +22,38 @@ def get_titles(urls_file):
             print(f"{index + 1}/{len(urls)} - Acessando: {url}")          
             try:
                 response = requests.get(url, verify=True, headers=headers_values)  # Adiciona verificação de SSL e User-Agent
-                print(f"Status HTTP: {response.status_code}")  
+                status_code = response.status_code
+                print(f"Status HTTP: {status_code}") 
                 soup = BeautifulSoup(response.text, 'html.parser')
                 title = soup.title.string
                 print(f"Titúlo: {title}\n")
-                titles.append((url, title))
+                if status_code == 200:
+                    titles_ok.append((url, title))
+                else:
+                    titles_error.append((url, title))
             except Exception as e:
                 print(f"Erro ao acessar {url}: {e}\n")
-    return titles
+    return titles_ok, titles_error
 
 def generate_html_file(titles, output_file):
     print(f"Gerando arquivo HTML em: {output_file}")
+    titles_ok_list, titles_error_list = titles 
     with open(output_file, 'w', encoding='UTF-8', errors='ignore') as file:
         file.write("<html>\n")
         file.write("<body>\n")
-        file.write("<h1>Links</h1>\n")
+        
+        file.write("<h1>Links Funcionais - Status HTTP 200 OK</h1>\n")
         file.write("<ol>\n")
-        for url, title in titles:
+        for url, title in titles_ok_list:
             file.write(f"<li><a href='{url}' target='_blank'>{title}</a></li>\n")
         file.write("</ol>\n")
+        
+        file.write("<h1>Links Não Funcionais - Status HTTP diferente de 200 OK</h1>\n")
+        file.write("<ol>\n")
+        for url, title in titles_error_list:
+            file.write(f"<li><a href='{url}' target='_blank'>{title}</a></li>\n")
+        file.write("</ol>\n")
+        
         file.write("</body>\n")
         file.write("</html>\n")
     print("Arquivo HTML gerado com sucesso!\n")
